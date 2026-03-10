@@ -1,0 +1,24 @@
+{
+  "type": "tablemod:alchemy",
+  "ingredient": { "tag": "tablemod:concrete" },
+  "catalyst": { "tag": "tablemod:alchemy_catalyst" },
+  "catalyst_required": true,
+  "results": [
+    { "id": "minecraft:white_concrete" },
+    { "id": "minecraft:orange_concrete" },
+    { "id": "minecraft:magenta_concrete" },
+    { "id": "minecraft:light_blue_concrete" },
+    { "id": "minecraft:yellow_concrete" },
+    { "id": "minecraft:lime_concrete" },
+    { "id": "minecraft:pink_concrete" },
+    { "id": "minecraft:gray_concrete" },
+    { "id": "minecraft:light_gray_concrete" },
+    { "id": "minecraft:cyan_concrete" },
+    { "id": "minecraft:purple_concrete" },
+    { "id": "minecraft:blue_concrete" },
+    { "id": "minecraft:brown_concrete" },
+    { "id": "minecraft:green_concrete" },
+    { "id": "minecraft:red_concrete" },
+    { "id": "minecraft:black_concrete" }
+  ]
+}

@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1900" viewBox="0 0 1600 1900" role="img" aria-labelledby="title desc">
+  <title id="title">La Table - Transmutation Cheat Sheet 1.21.1</title>
+  <desc id="desc">Poster summarizing all transmutation families and rules for the La Table Minecraft mod in version 1.21.1.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f7f1e3"/>
+      <stop offset="45%" stop-color="#efe3c0"/>
+      <stop offset="100%" stop-color="#d9c39c"/>
+    </linearGradient>
+    <linearGradient id="titleBar" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#312217"/>
+      <stop offset="100%" stop-color="#5b3f23"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff8ea"/>
+      <stop offset="100%" stop-color="#f4e8cc"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#5b3f23" flood-opacity="0.18"/>
+    </filter>
+    <style>
+      .title { font: 700 52px Georgia, 'Times New Roman', serif; fill: #fff8ea; }
+      .subtitle { font: 400 24px Georgia, 'Times New Roman', serif; fill: #eadab5; }
+      .section-title { font: 700 28px Georgia, 'Times New Roman', serif; fill: #3f2a18; }
+      .card-title { font: 700 26px Georgia, 'Times New Roman', serif; fill: #3f2a18; }
+      .body { font: 400 20px 'Trebuchet MS', Verdana, sans-serif; fill: #2d241d; }
+      .small { font: 400 18px 'Trebuchet MS', Verdana, sans-serif; fill: #44372b; }
+      .tiny { font: 400 16px 'Trebuchet MS', Verdana, sans-serif; fill: #5a4d40; }
+      .chip { font: 700 16px 'Trebuchet MS', Verdana, sans-serif; fill: #fff8ea; }
+      .accent { fill: #915f2d; }
+      .line { stroke: #8b6c48; stroke-width: 3; stroke-linecap: round; }
+      .soft { fill: url(#panel); stroke: #b9996b; stroke-width: 3; }
+      .card { fill: #fffaf0; stroke: #b9996b; stroke-width: 3; }
+      .req { fill: #9a4f2d; }
+      .opt { fill: #476e41; }
+      .pill { rx: 16; ry: 16; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1900" fill="url(#bg)"/>
+  <rect x="40" y="40" width="1520" height="1820" rx="28" fill="none" stroke="#7f603c" stroke-width="6"/>
+
+  <rect x="80" y="80" width="1440" height="150" rx="28" fill="url(#titleBar)" filter="url(#shadow)"/>
+  <text x="120" y="150" class="title">La Table - Transmutations 1.21.1</text>
+  <text x="120" y="192" class="subtitle">19 recipes, 5 catalyst items, 1 special conversion, and multiple family cycles</text>
+
+  <rect x="80" y="270" width="690" height="270" rx="24" class="soft" filter="url(#shadow)"/>
+  <text x="115" y="320" class="section-title">Core Rules</text>
+  <text x="115" y="362" class="body">- Every recipe stays inside one family.</text>
+  <text x="115" y="398" class="body">- 1 input gives all other outputs from the same family.</text>
+  <text x="115" y="434" class="body">- The current input item is hidden from the result list.</text>
+  <text x="115" y="470" class="body">- If catalyst is required, 1 catalyst is consumed per craft.</text>
+  <text x="115" y="506" class="body">- If catalyst is optional, the catalyst slot can stay empty.</text>
+
+  <rect x="830" y="270" width="690" height="270" rx="24" class="soft" filter="url(#shadow)"/>
+  <text x="865" y="320" class="section-title">Accepted Catalysts</text>
+  <rect x="865" y="348" width="195" height="38" class="req pill"/>
+  <text x="885" y="374" class="chip">Glowstone Dust</text>
+  <rect x="1078" y="348" width="128" height="38" class="req pill"/>
+  <text x="1100" y="374" class="chip">Diamond</text>
+  <rect x="1224" y="348" width="140" height="38" class="req pill"/>
+  <text x="1246" y="374" class="chip">Bone Meal</text>
+  <rect x="865" y="404" width="160" height="38" class="req pill"/>
+  <text x="889" y="430" class="chip">Echo Shard</text>
+  <rect x="1043" y="404" width="190" height="38" class="req pill"/>
+  <text x="1064" y="430" class="chip">Amethyst Shard</text>
+  <text x="865" y="486" class="small">Note: `alchemy_fuel` exists, but the current 19 recipes do not use it.</text>
+
+  <line x1="100" y1="580" x2="1500" y2="580" class="line"/>
+  <text x="80" y="635" class="section-title">Transmutation Families</text>
+
+  <rect x="80" y="680" width="680" height="410" rx="24" class="card" filter="url(#shadow)"/>
+  <text x="115" y="730" class="card-title">Colored</text>
+  <rect x="585" y="700" width="145" height="34" class="pill req"/>
+  <text x="608" y="723" class="chip">mix rules</text>
+  <text x="115" y="775" class="body">Banner -&gt; any other banner (16) - catalyst required</text>
+  <text x="115" y="810" class="body">Bed -&gt; any other bed (16) - catalyst required</text>
+  <text x="115" y="845" class="body">Carpet -&gt; any other wool carpet (16) - catalyst required</text>
+  <text x="115" y="880" class="body">Concrete -&gt; any other concrete color (16) - catalyst required</text>
+  <text x="115" y="915" class="body">Concrete Powder -&gt; any other powder color (16) - catalyst required</text>
+  <text x="115" y="950" class="body">Glass -&gt; glass + stained glass variants (17) - no catalyst</text>
+  <text x="115" y="985" class="body">Glass Panes -&gt; pane + stained panes (17) - no catalyst</text>
+  <text x="115" y="1020" class="body">Shulker Box -&gt; any other shulker color (17) - catalyst required</text>
+  <text x="115" y="1055" class="body">Terracotta -&gt; plain + stained terracotta (17) - no catalyst</text>
+  <text x="115" y="1090" class="body">Wool -&gt; any other wool color (16) - no catalyst</text>
+
+  <rect x="840" y="680" width="680" height="410" rx="24" class="card" filter="url(#shadow)"/>
+  <text x="875" y="730" class="card-title">Wood</text>
+  <rect x="1360" y="700" width="130" height="34" class="pill opt"/>
+  <text x="1386" y="723" class="chip">4 groups</text>
+  <text x="875" y="780" class="body">Fence cycle (12): oak, spruce, birch, jungle, acacia,</text>
+  <text x="875" y="812" class="body">dark oak, mangrove, cherry, bamboo, crimson, warped,</text>
+  <text x="875" y="844" class="body">nether brick - catalyst required</text>
+  <text x="875" y="896" class="body">Logs -&gt; any item in vanilla #minecraft:logs - no catalyst</text>
+  <text x="875" y="946" class="body">Planks -&gt; any item in vanilla #minecraft:planks - no catalyst</text>
+  <text x="875" y="996" class="body">Stripped Logs (20) -&gt; stripped logs, woods, stems, hyphae</text>
+  <text x="875" y="1028" class="body">from forge:stripped_logs - no catalyst</text>
+
+  <rect x="80" y="1135" width="680" height="310" rx="24" class="card" filter="url(#shadow)"/>
+  <text x="115" y="1185" class="card-title">Stone</text>
+  <rect x="615" y="1155" width="115" height="34" class="pill opt"/>
+  <text x="640" y="1178" class="chip">3 groups</text>
+  <text x="115" y="1232" class="body">Stone family (13): stone, granite, polished granite,</text>
+  <text x="115" y="1264" class="body">diorite, polished diorite, andesite, polished andesite,</text>
+  <text x="115" y="1296" class="body">cobblestone, smooth stone, deepslate, cobbled deepslate,</text>
+  <text x="115" y="1328" class="body">polished deepslate, tuff - no catalyst</text>
+  <text x="115" y="1378" class="body">Stone Bricks (4): stone, mossy, cracked, chiseled - no catalyst</text>
+  <text x="115" y="1413" class="body">Walls (17): multiple wall variants - no catalyst</text>
+
+  <rect x="840" y="1135" width="680" height="310" rx="24" class="card" filter="url(#shadow)"/>
+  <text x="875" y="1185" class="card-title">Nature and Nether</text>
+  <rect x="1300" y="1155" width="190" height="34" class="pill accent"/>
+  <text x="1322" y="1178" class="chip">small groups</text>
+  <text x="875" y="1238" class="body">Sapling -&gt; any item in vanilla #minecraft:saplings</text>
+  <text x="875" y="1270" class="body">No catalyst required</text>
+  <line x1="875" y1="1315" x2="1480" y2="1315" class="line"/>
+  <text x="875" y="1370" class="body">Special conversion:</text>
+  <text x="875" y="1410" class="body">Soul Sand -&gt; Soul Soil</text>
+  <text x="875" y="1442" class="body">Direct 1 to 1 conversion, no catalyst required</text>
+
+  <rect x="80" y="1490" width="1440" height="290" rx="24" class="soft" filter="url(#shadow)"/>
+  <text x="115" y="1540" class="section-title">Quick Gameplay Reading</text>
+  <text x="115" y="1588" class="body">Colored = recolor or restyle within the same visual family.</text>
+  <text x="115" y="1624" class="body">Wood = move across wood sets, especially logs, planks, fences, stripped blocks.</text>
+  <text x="115" y="1660" class="body">Stone = permute mineral and masonry variants without crafting them by hand.</text>
+  <text x="115" y="1696" class="body">Nature = sapling family swaps. Nether = the only non-cycle conversion.</text>
+  <text x="115" y="1742" class="small">Mental shortcut: in almost every case, place 1 block or item and choose another member of the same family.</text>
+
+  <text x="80" y="1845" class="tiny">Generated from the current 1.21.1 recipe set in data/tablemod/recipe/alchemy.</text>
+</svg>

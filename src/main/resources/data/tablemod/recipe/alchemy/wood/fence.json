@@ -1,0 +1,7 @@
+{
+  "type": "tablemod:alchemy",
+  "ingredient": { "tag": "forge:fences" },
+  "catalyst": { "tag": "tablemod:alchemy_catalyst" },
+  "catalyst_required": true,
+  "results_tag": "forge:fences"
+}

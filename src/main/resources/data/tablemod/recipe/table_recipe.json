@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "CLC",
+    "CBC",
+    "CAC"
+  ],
+  "key": {
+    "L": { "item": "minecraft:book" },
+    "B": { "item": "tablemod:flask" },
+    "A": { "item": "minecraft:amethyst_shard" },
+    "C": { "tag": "minecraft:planks" }
+  },
+  "result": { "id": "tablemod:alchemy_table", "count": 1 }
+}

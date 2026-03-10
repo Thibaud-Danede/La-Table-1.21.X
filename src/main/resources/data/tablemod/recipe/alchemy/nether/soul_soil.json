@@ -1,0 +1,9 @@
+{
+  "type": "tablemod:alchemy",
+  "ingredient": { "item": "minecraft:soul_sand" },
+  "catalyst": { "tag": "tablemod:alchemy_catalyst" },
+  "catalyst_required": false,
+  "results": [{ "id": "minecraft:soul_soil" }]
+}
+
+

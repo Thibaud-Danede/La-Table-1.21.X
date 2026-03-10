@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " G ",
+    " B ",
+    "   "
+  ],
+  "key": {
+    "G": { "item": "minecraft:glowstone_dust" },
+    "B": { "item": "minecraft:glass_bottle" }
+  },
+  "result": { "id": "tablemod:flask", "count": 1 }
+}

@@ -1,0 +1,7 @@
+{
+  "type": "tablemod:alchemy",
+  "ingredient": { "tag": "forge:banners" },
+  "catalyst": { "tag": "tablemod:alchemy_catalyst" },
+  "catalyst_required": true,
+  "results_tag": "forge:banners"
+}

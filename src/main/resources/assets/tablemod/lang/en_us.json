@@ -1,0 +1,14 @@
+{
+  "item.tablemod.flask": "Flask",
+
+  "block.tablemod.alchemy_table": "Alchemy Table",
+
+  "creativetab.tablemod_tab": "Table Mod",
+
+  "container.tablemod.alchemy": "Alchemy Table",
+
+  "jei.tablemod.alchemy": "Alchemy process",
+
+  "gui.tablemod.catalyst": "Catalyst required:",
+  "gui.tablemod.catalyst_none": "No catalyst required"
+}

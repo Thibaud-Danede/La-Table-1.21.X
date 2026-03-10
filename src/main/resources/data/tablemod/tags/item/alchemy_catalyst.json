@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:glowstone_dust",
+    "minecraft:diamond",
+    "minecraft:bone_meal",
+    "minecraft:echo_shard",
+    "minecraft:amethyst_shard"
+  ]
+}

@@ -1,26 +1,50 @@
-# eclipse
-bin
-*.launch
-.settings
-.metadata
-.classpath
-.project
+### Gradle ###
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/**/build/
 
-# idea
-out
+### IntelliJ IDEA ###
+.idea/
+*.iml
 *.ipr
 *.iws
-*.iml
-.idea
+out/
+!**/src/**/out/
+.run/
 
-# gradle
-build
-.gradle
+### Eclipse ###
+bin/
+.settings/
+.classpath
+.project
+.metadata
+*.launch
+.apt_generated
+.eclipse/
+.factorypath
+.springBeans
+.sts4-cache
+!**/src/**/bin/
 
-# other
-eclipse
-run
-runs
+### VS Code ###
+.vscode/
 
-# Files from Forge MDK
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Minecraft modding (NeoForge / userdev) ###
+run/
+run-data/
+runs/
+eclipse/
+**/src/generated/**/.cache/
+
+# Publication Maven locale (tasks publishing du projet)
+mcmodsrepo/
+repo/
+!**/src/**/repo/
+
+# Ancien Forge MDK
 forge*changelog.txt

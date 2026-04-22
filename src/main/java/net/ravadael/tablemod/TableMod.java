@@ -1,14 +1,12 @@
 package net.ravadael.tablemod;
 
 import com.mojang.logging.LogUtils;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.ravadael.tablemod.block.ModBlocks;
 import net.ravadael.tablemod.block.entity.ModBlockEntities;
 import net.ravadael.tablemod.item.ModCreativeModTabs;
@@ -23,22 +21,16 @@ public class TableMod {
     public static final String MOD_ID = "tablemod";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public TableMod() {
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-
+    public TableMod(IEventBus modEventBus) {
         ModCreativeModTabs.register(modEventBus);
         ModItems.register(modEventBus);
         ModBlocks.register(modEventBus);
-        modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(ModMessages::register);
         modEventBus.addListener(this::addCreative);
-        ModBlockEntities.BLOCK_ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
-        MinecraftForge.EVENT_BUS.register(this);
-        ModMenuTypes.MENUS.register(FMLJavaModLoadingContext.get().getModEventBus());
+        ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        NeoForge.EVENT_BUS.register(this);
+        ModMenuTypes.MENUS.register(modEventBus);
         ModRecipes.register(modEventBus);
-    }
-
-    private void commonSetup(final FMLCommonSetupEvent event) {
-        ModMessages.register();
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {

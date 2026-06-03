@@ -7,8 +7,11 @@
 
   "container.tablemod.alchemy": "Alchemy Table",
 
+  "emi.category.tablemod.alchemy": "Alchemy process",
   "jei.tablemod.alchemy": "Alchemy process",
 
+  "gui.tablemod.search": "Search...",
+  "gui.tablemod.search_empty": "No matches",
   "gui.tablemod.catalyst": "Catalyst required:",
   "gui.tablemod.catalyst_none": "No catalyst required"
 }

@@ -61,21 +61,25 @@ public class AlchemyRecipe implements Recipe<AlchemyRecipeInput> {
     }
 
     public List<ItemStack> getResults() {
+        return getResults(getRegistryAccess());
+    }
+
+    public List<ItemStack> getResults(@Nullable HolderLookup.Provider registries) {
         if (resultsTag != null) {
-            if (resolvedResults == null) {
-                resolvedResults = resolveResultsFromTag();
+            if (registries == null) {
+                return resolvedResults != null ? resolvedResults : List.of();
             }
+
+            if (resolvedResults == null || resolvedResults.isEmpty()) {
+                resolvedResults = resolveResultsFromTag(registries);
+            }
+
             return resolvedResults;
         }
         return results;
     }
 
-    private List<ItemStack> resolveResultsFromTag() {
-        HolderLookup.Provider registries = getRegistryAccess();
-        if (registries == null) {
-            return List.of();
-        }
-
+    private List<ItemStack> resolveResultsFromTag(HolderLookup.Provider registries) {
         var itemRegistry = registries.lookupOrThrow(Registries.ITEM);
         TagKey<Item> tagKey = TagKey.create(Registries.ITEM, resultsTag);
         List<ItemStack> resolved = new ArrayList<>();
@@ -87,6 +91,11 @@ public class AlchemyRecipe implements Recipe<AlchemyRecipeInput> {
 
     @Nullable
     private static HolderLookup.Provider getRegistryAccess() {
+        var server = ServerLifecycleHooks.getCurrentServer();
+        if (server != null) {
+            return server.registryAccess();
+        }
+
         if (FMLEnvironment.dist == Dist.CLIENT) {
             var minecraft = Minecraft.getInstance();
             if (minecraft.level != null) {
@@ -94,8 +103,7 @@ public class AlchemyRecipe implements Recipe<AlchemyRecipeInput> {
             }
         }
 
-        var server = ServerLifecycleHooks.getCurrentServer();
-        return server != null ? server.registryAccess() : null;
+        return null;
     }
 
     public boolean matchesInputOnly(AlchemyRecipeInput input) {
@@ -113,7 +121,7 @@ public class AlchemyRecipe implements Recipe<AlchemyRecipeInput> {
 
     @Override
     public ItemStack assemble(AlchemyRecipeInput input, HolderLookup.Provider registries) {
-        List<ItemStack> list = getResults();
+        List<ItemStack> list = getResults(registries);
         return list.isEmpty() ? ItemStack.EMPTY : list.get(0).copy();
     }
 
@@ -124,7 +132,7 @@ public class AlchemyRecipe implements Recipe<AlchemyRecipeInput> {
 
     @Override
     public ItemStack getResultItem(HolderLookup.Provider registries) {
-        List<ItemStack> list = getResults();
+        List<ItemStack> list = getResults(registries);
         return list.isEmpty() ? ItemStack.EMPTY : list.get(0);
     }
 
@@ -144,7 +152,11 @@ public class AlchemyRecipe implements Recipe<AlchemyRecipeInput> {
     }
 
     public List<ItemStack> getFilteredResults(ItemStack input) {
-        List<ItemStack> list = getResults();
+        return getFilteredResults(input, getRegistryAccess());
+    }
+
+    public List<ItemStack> getFilteredResults(ItemStack input, @Nullable HolderLookup.Provider registries) {
+        List<ItemStack> list = getResults(registries);
         if (input.isEmpty()) {
             return list;
         }

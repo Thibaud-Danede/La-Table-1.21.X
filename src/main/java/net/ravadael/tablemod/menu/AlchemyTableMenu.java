@@ -3,6 +3,7 @@ package net.ravadael.tablemod.menu;
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -13,11 +14,13 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.ravadael.tablemod.block.entity.AlchemyTableBlockEntity;
 import net.ravadael.tablemod.recipe.AlchemyRecipe;
 import net.ravadael.tablemod.recipe.AlchemyRecipeInput;
 import net.ravadael.tablemod.recipe.ModRecipes;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -27,8 +30,12 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
     private final SimpleContainer result = new SimpleContainer(1);
     private final ContainerLevelAccess access;
     private final Level level;
+    @Nullable
+    private final AlchemyTableBlockEntity tableBlockEntity;
 
-    private List<AlchemyRecipe> recipes = List.of();
+    private List<RecipeHolder<AlchemyRecipe>> recipes = List.of();
+    @Nullable
+    private ResourceLocation selectedRecipeId;
     private ItemStack selectedOutput = ItemStack.EMPTY;
     private ItemStack lastInputItem = ItemStack.EMPTY;
     private ItemStack lastCatalystItem = ItemStack.EMPTY;
@@ -45,8 +52,9 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
         super(ModMenuTypes.ALCHEMY_TABLE_MENU.get(), id);
         this.level = level;
         this.access = ContainerLevelAccess.create(level, pos);
+        this.tableBlockEntity = level.getBlockEntity(pos) instanceof AlchemyTableBlockEntity be ? be : null;
 
-        this.addSlot(new Slot(input, 0, 20, 23) {
+        this.addSlot(new Slot(input, 0, 20, 35) {
             @Override
             public void setChanged() {
                 super.setChanged();
@@ -54,7 +62,7 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
             }
         });
 
-        this.addSlot(new Slot(input, 1, 20, 42) {
+        this.addSlot(new Slot(input, 1, 20, 54) {
             @Override
             public void setChanged() {
                 super.setChanged();
@@ -62,7 +70,7 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
             }
         });
 
-        this.addSlot(new Slot(result, 0, 143, 33) {
+        this.addSlot(new Slot(result, 0, 143, 45) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
@@ -78,7 +86,7 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
                     input.setItem(0, ItemStack.EMPTY);
                 }
 
-                AlchemyRecipe recipe = recipes.isEmpty() ? null : recipes.get(0);
+                AlchemyRecipe recipe = getSelectedRecipe();
                 if (recipe != null && recipe.isCatalystRequired()) {
                     ItemStack catalyst = input.getItem(1);
                     catalyst.shrink(1);
@@ -96,12 +104,12 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
 
         for (int row = 0; row < 3; ++row) {
             for (int col = 0; col < 9; ++col) {
-                this.addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                this.addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 96 + row * 18));
             }
         }
 
         for (int hotbarSlot = 0; hotbarSlot < 9; ++hotbarSlot) {
-            this.addSlot(new Slot(inv, hotbarSlot, 8 + hotbarSlot * 18, 142));
+            this.addSlot(new Slot(inv, hotbarSlot, 8 + hotbarSlot * 18, 154));
         }
     }
 
@@ -117,6 +125,7 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
         lastCatalystItem = catalystItem.copy();
 
         if (changed) {
+            selectedRecipeId = null;
             selectedOutput = ItemStack.EMPTY;
         }
 
@@ -127,6 +136,7 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
         ItemStack inputItem = input.getItem(0);
         if (inputItem.isEmpty()) {
             recipes = List.of();
+            selectedRecipeId = null;
             selectedOutput = ItemStack.EMPTY;
             result.setItem(0, ItemStack.EMPTY);
             broadcastChanges();
@@ -134,21 +144,27 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
         }
 
         AlchemyRecipeInput recipeInput = new AlchemyRecipeInput(inputItem, input.getItem(1));
-        List<AlchemyRecipe> valid = new ArrayList<>();
-        for (var holder : level.getRecipeManager().getAllRecipesFor(ModRecipes.ALCHEMY_RECIPE_TYPE.get())) {
+        List<RecipeHolder<AlchemyRecipe>> valid = new ArrayList<>();
+        for (RecipeHolder<AlchemyRecipe> holder : level.getRecipeManager().getAllRecipesFor(ModRecipes.ALCHEMY_RECIPE_TYPE.get())) {
             AlchemyRecipe recipe = holder.value();
             if (recipe.matchesInputOnly(recipeInput)) {
-                valid.add(recipe);
+                valid.add(holder);
             }
         }
 
-        valid.sort(Comparator.comparing(recipe -> recipe.getResultItem(level.registryAccess()).getDisplayName().getString()));
+        valid.sort(Comparator.comparing(holder -> holder.value().getResultItem(level.registryAccess()).getDisplayName().getString()));
         recipes = valid;
+
+        if ((selectedRecipeId == null || selectedOutput.isEmpty()) && tryRestoreRememberedSelection(inputItem)) {
+            assembleSelectedOutput();
+            return;
+        }
+
         assembleSelectedOutput();
     }
 
     public void assembleSelectedOutput() {
-        if (selectedOutput.isEmpty()) {
+        if (selectedRecipeId == null || selectedOutput.isEmpty()) {
             result.setItem(0, ItemStack.EMPTY);
             broadcastChanges();
             return;
@@ -156,6 +172,7 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
 
         ItemStack inputItem = input.getItem(0);
         if (inputItem.isEmpty()) {
+            selectedRecipeId = null;
             selectedOutput = ItemStack.EMPTY;
             result.setItem(0, ItemStack.EMPTY);
             broadcastChanges();
@@ -163,9 +180,17 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
         }
 
         AlchemyRecipeInput recipeInput = new AlchemyRecipeInput(inputItem, input.getItem(1));
-        for (AlchemyRecipe recipe : recipes) {
-            for (ItemStack output : recipe.getFilteredResults(inputItem)) {
-                if (ItemStack.isSameItemSameComponents(output, selectedOutput)) {
+        for (RecipeHolder<AlchemyRecipe> holder : recipes) {
+            if (!holder.id().equals(selectedRecipeId)) {
+                continue;
+            }
+
+            AlchemyRecipe recipe = holder.value();
+            for (ItemStack output : recipe.getFilteredResults(inputItem, level.registryAccess())) {
+                if (matchesSelectedOutput(output, selectedOutput)) {
+                    selectedRecipeId = holder.id();
+                    selectedOutput = output.copy();
+                    rememberSelectedOutput(holder.id(), output);
                     result.setItem(0, recipe.matches(recipeInput, level) ? output.copy() : ItemStack.EMPTY);
                     broadcastChanges();
                     return;
@@ -173,12 +198,14 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
             }
         }
 
+        selectedRecipeId = null;
         selectedOutput = ItemStack.EMPTY;
         result.setItem(0, ItemStack.EMPTY);
         broadcastChanges();
     }
 
-    public void setSelectedOutput(ItemStack output) {
+    public void setSelectedOutput(ResourceLocation recipeId, ItemStack output) {
+        this.selectedRecipeId = recipeId;
         this.selectedOutput = output.copy();
         assembleSelectedOutput();
     }
@@ -206,8 +233,9 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
             ItemStack inputItem = input.getItem(0);
             ItemStack catalyst = input.getItem(1);
             int maxCrafts = inputItem.getCount();
+            AlchemyRecipe selectedRecipe = getSelectedRecipe();
 
-            if (!recipes.isEmpty() && recipes.get(0).isCatalystRequired()) {
+            if (selectedRecipe != null && selectedRecipe.isCatalystRequired()) {
                 maxCrafts = Math.min(maxCrafts, catalyst.getCount());
             }
 
@@ -224,7 +252,7 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
                     input.setItem(0, ItemStack.EMPTY);
                 }
 
-                if (!recipes.isEmpty() && recipes.get(0).isCatalystRequired()) {
+                if (selectedRecipe != null && selectedRecipe.isCatalystRequired()) {
                     catalyst.shrink(1);
                     if (catalyst.isEmpty()) {
                         input.setItem(1, ItemStack.EMPTY);
@@ -269,6 +297,10 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
     }
 
     public List<AlchemyRecipe> getCurrentRecipes() {
+        return recipes.stream().map(RecipeHolder::value).toList();
+    }
+
+    public List<RecipeHolder<AlchemyRecipe>> getCurrentRecipeHolders() {
         return recipes;
     }
 
@@ -278,14 +310,62 @@ public class AlchemyTableMenu extends AbstractContainerMenu {
             return null;
         }
 
-        for (AlchemyRecipe recipe : recipes) {
-            for (ItemStack output : recipe.getFilteredResults(inputItem)) {
-                if (ItemStack.isSameItemSameComponents(output, resultStack)) {
+        for (RecipeHolder<AlchemyRecipe> holder : recipes) {
+            AlchemyRecipe recipe = holder.value();
+            for (ItemStack output : recipe.getFilteredResults(inputItem, level.registryAccess())) {
+                if (matchesSelectedOutput(output, resultStack)) {
                     return recipe;
                 }
             }
         }
         return null;
+    }
+
+    @Nullable
+    private AlchemyRecipe getSelectedRecipe() {
+        if (selectedRecipeId == null) {
+            return null;
+        }
+
+        for (RecipeHolder<AlchemyRecipe> holder : recipes) {
+            if (holder.id().equals(selectedRecipeId)) {
+                return holder.value();
+            }
+        }
+        return null;
+    }
+
+    private static boolean matchesSelectedOutput(ItemStack left, ItemStack right) {
+        return ItemStack.isSameItemSameComponents(left, right) || ItemStack.isSameItem(left, right);
+    }
+
+    private boolean tryRestoreRememberedSelection(ItemStack inputItem) {
+        if (tableBlockEntity == null) {
+            return false;
+        }
+
+        for (RecipeHolder<AlchemyRecipe> holder : recipes) {
+            ItemStack rememberedOutput = tableBlockEntity.getRememberedSelection(holder.id());
+            if (rememberedOutput.isEmpty()) {
+                continue;
+            }
+
+            for (ItemStack output : holder.value().getFilteredResults(inputItem, level.registryAccess())) {
+                if (matchesSelectedOutput(output, rememberedOutput)) {
+                    selectedRecipeId = holder.id();
+                    selectedOutput = output.copy();
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private void rememberSelectedOutput(ResourceLocation recipeId, ItemStack output) {
+        if (tableBlockEntity != null) {
+            tableBlockEntity.rememberSelection(recipeId, output);
+        }
     }
 
     @Override

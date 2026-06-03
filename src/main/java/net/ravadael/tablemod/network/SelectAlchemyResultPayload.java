@@ -9,12 +9,14 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.ravadael.tablemod.TableMod;
 import net.ravadael.tablemod.menu.AlchemyTableMenu;
 
-public record SelectAlchemyResultPayload(ItemStack selectedOutput) implements CustomPacketPayload {
+public record SelectAlchemyResultPayload(ResourceLocation recipeId, ItemStack selectedOutput) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<SelectAlchemyResultPayload> TYPE =
             new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(TableMod.MOD_ID, "select_alchemy_result"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SelectAlchemyResultPayload> STREAM_CODEC =
             StreamCodec.composite(
+                    ResourceLocation.STREAM_CODEC,
+                    SelectAlchemyResultPayload::recipeId,
                     ItemStack.STREAM_CODEC,
                     SelectAlchemyResultPayload::selectedOutput,
                     SelectAlchemyResultPayload::new
@@ -28,7 +30,7 @@ public record SelectAlchemyResultPayload(ItemStack selectedOutput) implements Cu
     public static void handleOnServer(SelectAlchemyResultPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() != null && context.player().containerMenu instanceof AlchemyTableMenu menu) {
-                menu.setSelectedOutput(payload.selectedOutput());
+                menu.setSelectedOutput(payload.recipeId(), payload.selectedOutput());
             }
         });
     }

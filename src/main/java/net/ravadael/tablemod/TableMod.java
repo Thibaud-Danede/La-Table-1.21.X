@@ -28,6 +28,7 @@ public class TableMod {
         modEventBus.addListener(ModMessages::register);
         modEventBus.addListener(this::addCreative);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        modEventBus.addListener(ModBlockEntities::registerCapabilities);
         NeoForge.EVENT_BUS.register(this);
         ModMenuTypes.MENUS.register(modEventBus);
         ModRecipes.register(modEventBus);

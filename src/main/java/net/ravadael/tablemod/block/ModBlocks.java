@@ -12,6 +12,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.ravadael.tablemod.TableMod;
 import net.ravadael.tablemod.block.custom.AlchemyTableBlock;
+import net.ravadael.tablemod.block.custom.AutomaticAlchemyTableBlock;
 import net.ravadael.tablemod.item.ModItems;
 
 import java.util.function.Supplier;
@@ -22,6 +23,13 @@ public class ModBlocks {
 
     public static final DeferredHolder<Block, Block> ALCHEMY_TABLE = registerBlock("alchemy_table",
             () -> new AlchemyTableBlock(
+                    BlockBehaviour.Properties.ofFullCopy(Blocks.CRIMSON_PLANKS)
+                            .sound(SoundType.WOOD)
+                            .noOcclusion()
+            ));
+
+    public static final DeferredHolder<Block, Block> AUTOMATIC_ALCHEMY_TABLE = registerBlock("automatic_alchemy_table",
+            () -> new AutomaticAlchemyTableBlock(
                     BlockBehaviour.Properties.ofFullCopy(Blocks.CRIMSON_PLANKS)
                             .sound(SoundType.WOOD)
                             .noOcclusion()

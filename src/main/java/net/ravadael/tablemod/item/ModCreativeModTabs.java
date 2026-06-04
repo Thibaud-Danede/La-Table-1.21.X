@@ -24,6 +24,7 @@ public class ModCreativeModTabs {
 
                         //Ajout des blocks dans menu secondaire
                         pOutput.accept(ModBlocks.ALCHEMY_TABLE.get());
+                        pOutput.accept(ModBlocks.AUTOMATIC_ALCHEMY_TABLE.get());
                     })
                     .build());
 

@@ -2,10 +2,12 @@
   "item.tablemod.flask": "Flask",
 
   "block.tablemod.alchemy_table": "Alchemy Table",
+  "block.tablemod.automatic_alchemy_table": "Automatic Alchemy Table",
 
   "creativetab.tablemod_tab": "Table Mod",
 
   "container.tablemod.alchemy": "Alchemy Table",
+  "container.tablemod.automatic_alchemy": "Automatic Alchemy Table",
 
   "emi.category.tablemod.alchemy": "Alchemy process",
   "jei.tablemod.alchemy": "Alchemy process",

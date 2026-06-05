@@ -2,14 +2,17 @@
   "type": "minecraft:crafting_shaped",
   "category": "redstone",
   "pattern": [
-    " H ",
+    "CHC",
     "RTR",
-    " R "
+    "IPI"
   ],
   "key": {
     "T": { "item": "tablemod:alchemy_table" },
     "H": { "item": "minecraft:hopper" },
-    "R": { "item": "minecraft:redstone" }
+    "C": { "item": "minecraft:chest" },
+    "R": { "item": "minecraft:redstone" },
+    "I": { "item": "minecraft:iron_ingot" },
+    "P": { "item": "minecraft:piston" }
   },
   "result": { "id": "tablemod:automatic_alchemy_table", "count": 1 }
 }

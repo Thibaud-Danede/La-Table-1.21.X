@@ -15,6 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
@@ -32,6 +33,14 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_CATALYST = 1;
     public static final int SLOT_OUTPUT = 2;
+
+    /** Un item par opération de transfert, comme un hopper vanilla. */
+    private static final int ITEMS_PER_TRANSFER = 1;
+    /** Délai entre deux transferts ou crafts réussis (8 ticks = hopper). */
+    private static final int TICKS_PER_OPERATION = HopperBlockEntity.MOVE_ITEM_SPEED;
+
+    private int transferCooldown = 0;
+    private int craftCooldown = 0;
 
     private final ItemStackHandler inventory = new ItemStackHandler(3) {
         @Override
@@ -150,8 +159,21 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
 
         if (!level.isClientSide) {
             be.resolveSelectionForCurrentInput(level);
-            be.tryCraftOne(level);
-            be.tryTransferWithAdjacentBlocks(level);
+
+            if (be.transferCooldown > 0) {
+                be.transferCooldown--;
+            }
+            if (be.craftCooldown > 0) {
+                be.craftCooldown--;
+            }
+
+            if (be.transferCooldown == 0 && be.tryTransferWithAdjacentBlocks(level)) {
+                be.transferCooldown = TICKS_PER_OPERATION;
+            }
+
+            if (be.craftCooldown == 0 && be.tryCraftOne(level)) {
+                be.craftCooldown = TICKS_PER_OPERATION;
+            }
         }
     }
 
@@ -163,10 +185,10 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
         return getBlockState().getValue(AutomaticAlchemyTableBlock.FACING).getCounterClockWise();
     }
 
-    private void tryTransferWithAdjacentBlocks(Level level) {
-        tryPushToAdjacent(level, getOutputSide(), SLOT_OUTPUT);
-        tryPullFromAdjacent(level, getInputSide(), SLOT_INPUT);
-        tryPullFromAdjacent(level, Direction.UP, SLOT_CATALYST);
+    private boolean tryTransferWithAdjacentBlocks(Level level) {
+        return tryPullFromAdjacent(level, getInputSide(), SLOT_INPUT)
+                | tryPullFromAdjacent(level, Direction.UP, SLOT_CATALYST)
+                | tryPushToAdjacent(level, getOutputSide(), SLOT_OUTPUT);
     }
 
     /** Recette réellement utilisable pour l'entrée + la cible choisie (pas seulement l'id mémorisé). */
@@ -200,52 +222,57 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
         return level.getCapability(Capabilities.ItemHandler.BLOCK, pos, null);
     }
 
-    private void tryPullFromAdjacent(Level level, Direction fromSide, int inventorySlot) {
+    private boolean tryPullFromAdjacent(Level level, Direction fromSide, int inventorySlot) {
         BlockPos sourcePos = worldPosition.relative(fromSide);
         IItemHandler source = getAdjacentItemHandler(sourcePos, fromSide);
         if (source == null) {
-            return;
+            return false;
         }
 
         int space = inventory.getStackInSlot(inventorySlot).getMaxStackSize() - inventory.getStackInSlot(inventorySlot).getCount();
         if (space <= 0) {
-            return;
+            return false;
         }
 
+        int amount = Math.min(ITEMS_PER_TRANSFER, space);
+
         for (int i = 0; i < source.getSlots(); i++) {
-            ItemStack probe = source.extractItem(i, space, true);
+            ItemStack probe = source.extractItem(i, amount, true);
             if (probe.isEmpty() || !isItemValidForInventorySlot(inventorySlot, probe)) {
                 continue;
             }
 
-            ItemStack extracted = source.extractItem(i, space, false);
+            ItemStack extracted = source.extractItem(i, amount, false);
             ItemStack remainder = inventory.insertItem(inventorySlot, extracted, false);
             if (!remainder.isEmpty()) {
                 source.insertItem(i, remainder, false);
             }
-
-            space = inventory.getStackInSlot(inventorySlot).getMaxStackSize() - inventory.getStackInSlot(inventorySlot).getCount();
-            if (space <= 0) {
-                break;
-            }
+            return true;
         }
+        return false;
     }
 
-    private void tryPushToAdjacent(Level level, Direction toSide, int inventorySlot) {
+    private boolean tryPushToAdjacent(Level level, Direction toSide, int inventorySlot) {
         ItemStack stack = inventory.getStackInSlot(inventorySlot);
         if (stack.isEmpty()) {
-            return;
+            return false;
         }
 
         BlockPos destPos = worldPosition.relative(toSide);
         IItemHandler dest = getAdjacentItemHandler(destPos, toSide);
         if (dest == null) {
-            return;
+            return false;
         }
 
         ItemStack toInsert = stack.copy();
-        ItemStack remainder = ItemHandlerHelper.insertItemStacked(dest, toInsert, false);
-        inventory.setStackInSlot(inventorySlot, remainder);
+        toInsert.setCount(1);
+        ItemStack remainder = ItemHandlerHelper.insertItem(dest, toInsert, false);
+        if (remainder.isEmpty()) {
+            stack.shrink(1);
+            inventory.setStackInSlot(inventorySlot, stack.isEmpty() ? ItemStack.EMPTY : stack);
+            return true;
+        }
+        return false;
     }
 
     private boolean isItemValidForInventorySlot(int slot, ItemStack stack) {
@@ -282,23 +309,23 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
         return false;
     }
 
-    private void tryCraftOne(Level level) {
+    private boolean tryCraftOne(Level level) {
         if (!hasTargetSelection()) {
-            return;
+            return false;
         }
 
         ItemStack inputStack = inventory.getStackInSlot(SLOT_INPUT);
         ItemStack catalystStack = inventory.getStackInSlot(SLOT_CATALYST);
         RecipeHolder<AlchemyRecipe> holder = findCraftHolder(level, inputStack, catalystStack, selectedOutput);
         if (holder == null) {
-            return;
+            return false;
         }
 
         AlchemyRecipe recipe = holder.value();
         AlchemyRecipeInput recipeInput = new AlchemyRecipeInput(inputStack, catalystStack);
 
         if (!recipe.matches(recipeInput, level)) {
-            return;
+            return false;
         }
 
         ItemStack result = selectedOutput.copy();
@@ -307,10 +334,10 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
         }
         ItemStack outputStack = inventory.getStackInSlot(SLOT_OUTPUT);
         if (!outputStack.isEmpty() && !ItemStack.isSameItemSameComponents(outputStack, result)) {
-            return;
+            return false;
         }
         if (!outputStack.isEmpty() && outputStack.getCount() + result.getCount() > outputStack.getMaxStackSize()) {
-            return;
+            return false;
         }
 
         inputStack.shrink(1);
@@ -334,6 +361,7 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
 
         setChanged();
         level.playSound(null, worldPosition, SoundEvents.BREWING_STAND_BREW, SoundSource.BLOCKS, 0.3F, 1.0F);
+        return true;
     }
 
     private boolean canInsertCatalyst(ItemStack stack) {
@@ -388,6 +416,8 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
         inventory.deserializeNBT(registries, tag.getCompound("Items"));
         loadSelection(tag, registries);
         playersUsing = tag.getInt("Users");
+        transferCooldown = tag.getInt("TransferCooldown");
+        craftCooldown = tag.getInt("CraftCooldown");
     }
 
     @Override
@@ -396,6 +426,8 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
         tag.put("Items", inventory.serializeNBT(registries));
         saveSelection(tag, registries);
         tag.putInt("Users", playersUsing);
+        tag.putInt("TransferCooldown", transferCooldown);
+        tag.putInt("CraftCooldown", craftCooldown);
     }
 
     @Override

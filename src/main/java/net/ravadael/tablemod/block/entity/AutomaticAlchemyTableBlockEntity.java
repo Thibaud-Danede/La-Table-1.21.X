@@ -52,6 +52,11 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
         public boolean isItemValid(int slot, ItemStack stack) {
             return AutomaticAlchemyTableBlockEntity.this.isItemValidForInventorySlot(slot, stack);
         }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            return slot == SLOT_OUTPUT ? 1 : super.getSlotLimit(slot);
+        }
     };
 
     @Nullable
@@ -328,16 +333,13 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
             return false;
         }
 
+        if (!inventory.getStackInSlot(SLOT_OUTPUT).isEmpty()) {
+            return false;
+        }
+
         ItemStack result = selectedOutput.copy();
         if (result.getCount() < 1) {
             result.setCount(1);
-        }
-        ItemStack outputStack = inventory.getStackInSlot(SLOT_OUTPUT);
-        if (!outputStack.isEmpty() && !ItemStack.isSameItemSameComponents(outputStack, result)) {
-            return false;
-        }
-        if (!outputStack.isEmpty() && outputStack.getCount() + result.getCount() > outputStack.getMaxStackSize()) {
-            return false;
         }
 
         inputStack.shrink(1);
@@ -348,12 +350,7 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
             inventory.setStackInSlot(SLOT_CATALYST, catalystStack.isEmpty() ? ItemStack.EMPTY : catalystStack);
         }
 
-        if (outputStack.isEmpty()) {
-            inventory.setStackInSlot(SLOT_OUTPUT, result);
-        } else {
-            outputStack.grow(result.getCount());
-            inventory.setStackInSlot(SLOT_OUTPUT, outputStack);
-        }
+        inventory.setStackInSlot(SLOT_OUTPUT, result);
 
         if (!holder.id().equals(selectedRecipeId)) {
             rememberSelection(holder.id(), selectedOutput);

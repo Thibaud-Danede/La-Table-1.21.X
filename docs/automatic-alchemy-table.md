@@ -78,7 +78,7 @@ flowchart TB
 |-------|-----------|------|
 | 0 | `SLOT_INPUT` | Matière à transmuter (rempli par hopper gauche / tick actif) |
 | 1 | `SLOT_CATALYST` | Catalyseur si la recette l'exige (face **haut**) |
-| 2 | `SLOT_OUTPUT` | Buffer de sortie avant éjection vers hopper droit |
+| 2 | `SLOT_OUTPUT` | Buffer de sortie (max **1 item**) avant éjection vers hopper droit |
 
 ### Sélection persistée (NBT)
 
@@ -142,9 +142,9 @@ Le craft avant le transfert garantit que l'item produit est poussé dès le mêm
 Conditions :
 
 1. `hasTargetSelection()` (id + stack cible non vides).
-2. `findCraftHolder(level, input, catalyst, selectedOutput)` non null.
-3. `recipe.matches(recipeInput, level)` (entrée + catalyseur si requis).
-4. Slot sortie : vide ou même item, place pour +1.
+2. `SLOT_OUTPUT` **vide** (buffer limité à 1 item ; la table ne transmute plus tant que le buffer n'est pas vidé).
+3. `findCraftHolder(level, input, catalyst, selectedOutput)` non null.
+4. `recipe.matches(recipeInput, level)` (entrée + catalyseur si requis).
 
 Effets : −1 entrée, −1 catalyseur si requis, +1 dans `SLOT_OUTPUT` (copie de `selectedOutput`), son `BREWING_STAND_BREW`.
 
@@ -163,10 +163,19 @@ Ne dépend pas uniquement de `selectedRecipeId` figé au clic GUI — important 
 
 ### Menu `AutomaticAlchemyTableMenu`
 
-- Slot **20, 44** : miroir lecture seule de `SLOT_INPUT` du BE (`mayPlace` / pas de pickup joueur).
-- Slot **143, 45** : aperçu de la cible (`selectionPreview`).
-- Inventaire joueur en dessous.
+4 slots machine (indexation menu) :
+
+| Index | Position GUI | Contenu | Interaction joueur |
+|-------|--------------|---------|--------------------|
+| 0 | 20, 44 | `SLOT_INPUT` du BE | Retrait seul (pas de dépôt) |
+| 1 | 143, 45 | Aperçu cible (`selectionPreview`) | Lecture seule |
+| 2 | 20, 35 | `SLOT_CATALYST` du BE | Retrait seul (pas de dépôt) |
+| 3 | 152, 64 | `SLOT_OUTPUT` du BE (1 item max) | Retrait seul (pas de dépôt) |
+
+Inventaire joueur à partir du slot 4.
+
 - `getRecipeHoldersForInput` : filtre les recettes comme `AlchemyTableMenu.updateRecipes` (liste vide d'entrée → toutes les recettes pour le mode « catalogue global »).
+- Shift-clic depuis les slots machine → inventaire joueur. Shift-clic depuis l'inventaire joueur n'insère dans aucun slot machine (alimentation uniquement par hopper).
 
 ### Écran `AutomaticAlchemyTableScreen`
 
@@ -202,7 +211,7 @@ Recette de craft JSON : table manuelle + hopper + redstone (voir `data/tablemod/
 | Choix sortie | Recettes filtrées par entrée | Idem si entrée visible ; catalogue global si slot vide |
 | Craft | Clic slot résultat (`quickMoveStack`) | Tick serveur automatique |
 | Logistique | Joueur | Hoppers + transfert actif |
-| Slots GUI | Entrée + catalyseur + résultat | Entrée (lecture seule) + aperçu cible |
+| Slots GUI | Entrée + catalyseur + résultat | Entrée + catalyseur + sortie (retrait seul) + aperçu cible |
 | Persistance cible | Par recette sur BE table | `SelectedRecipeId` + `SelectedOutput` sur BE auto |
 
 ---
@@ -212,6 +221,7 @@ Recette de craft JSON : table manuelle + hopper + redstone (voir `data/tablemod/
 - Une bûche normale (`forge:logs`) ne peut pas devenir une bûche *stripped* : familles de tags différentes (`logs` vs `stripped_logs`), identique à la table manuelle.
 - Sans cible choisie dans la GUI, aucun craft automatique (l'entrée peut quand même se remplir).
 - Cible incompatible avec l'entrée : pas de craft, l'item reste en slot d'entrée.
+- Le buffer de sortie (`SLOT_OUTPUT`) ne contient qu'**1 item** maximum. Tant qu'il est plein (hopper absent ou plein), la table ne transmute plus.
 
 ---
 
@@ -221,6 +231,9 @@ Recette de craft JSON : table manuelle + hopper + redstone (voir `data/tablemod/
 2. Hopper **gauche** (face avant) → bûches ; hopper **droite** → vide, orienté vers la table.
 3. Vérifier : transmutation, sortie dans le hopper droit, pas de retour dans le slot d'entrée ni hopper gauche.
 4. Retirer la cible / changer l'entrée : le catalogue GUI doit se filtrer comme sur la table classique.
+5. **Slot catalyseur** (haut gauche GUI) : hopper dessus → le catalyseur apparaît. Le joueur peut le retirer mais pas le déposer manuellement.
+6. **Slot sortie** (bas droite GUI) : retirer le hopper droit → l'item transmuté reste dans le slot (1 seul). La table ne transmute plus tant que le slot n'est pas vidé. Le joueur peut récupérer l'item manuellement.
+7. Shift-clic depuis l'inventaire joueur ne dépose rien dans les slots machine.
 
 ---
 

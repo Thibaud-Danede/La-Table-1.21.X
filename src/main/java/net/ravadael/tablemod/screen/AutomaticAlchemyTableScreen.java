@@ -44,8 +44,6 @@ public class AutomaticAlchemyTableScreen extends AbstractContainerScreen<Automat
     private static final int SEARCH_H = 16;
     private static final int SEARCH_TEXT_PADDING = 2;
     private static final int SEARCH_TEXT_PADDING_Y = 4;
-    private static final int INPUT_SLOT_X = 20;
-    private static final int INPUT_SLOT_Y = 44;
 
     private int scrollOffset = 0;
     private int selectedIndex = -1;
@@ -134,7 +132,6 @@ public class AutomaticAlchemyTableScreen extends AbstractContainerScreen<Automat
     protected void renderBg(GuiGraphics gfx, float partialTicks, int mouseX, int mouseY) {
         gfx.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
         renderSearchBoxBackground(gfx);
-        hideUnusedManualTableSlots(gfx);
 
         List<DisplayedResult> results = collectResults();
         int totalRows = (int) Math.ceil(results.size() / (double) COLS);
@@ -405,23 +402,6 @@ public class AutomaticAlchemyTableScreen extends AbstractContainerScreen<Automat
 
         gfx.fill(x1, y1, x2, y2, 0xFF3D352A);
         gfx.fill(x1 + 1, y1 + 1, x2 - 1, y2 - 1, 0xCC6E5E49);
-    }
-
-    /** Masque les deux slots de la table manuelle ; un seul slot d'entrée est utilisé au centre. */
-    private void hideUnusedManualTableSlots(GuiGraphics gfx) {
-        coverSlotArea(gfx, 20, 35);
-        coverSlotArea(gfx, 20, 54);
-        int x = leftPos + INPUT_SLOT_X - 1;
-        int y = topPos + INPUT_SLOT_Y - 1;
-        gfx.fill(x, y, x + 18, y + 18, 0xFF3D352A);
-        gfx.fill(x + 1, y + 1, x + 17, y + 17, 0xCC6E5E49);
-    }
-
-    private void coverSlotArea(GuiGraphics gfx, int slotX, int slotY) {
-        int x = leftPos + slotX - 1;
-        int y = topPos + slotY - 1;
-        gfx.fill(x, y, x + 18, y + 18, 0xFF3D352A);
-        gfx.fill(x + 1, y + 1, x + 17, y + 17, 0xCC6E5E49);
     }
 
     private record DisplayedResult(ResourceLocation recipeId, AlchemyRecipe recipe, ItemStack stack) {

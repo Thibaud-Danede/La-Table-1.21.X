@@ -28,8 +28,10 @@ import java.util.List;
 public class AutomaticAlchemyTableMenu extends AbstractContainerMenu {
     private static final int SLOT_INPUT = 0;
     private static final int SLOT_SELECTION_PREVIEW = 1;
-    private static final int SLOT_PLAYER_START = 2;
-    private static final int SLOT_PLAYER_END = 38;
+    private static final int SLOT_CATALYST = 2;
+    private static final int SLOT_OUTPUT = 3;
+    private static final int SLOT_PLAYER_START = 4;
+    private static final int SLOT_PLAYER_END = 40;
 
     private final SimpleContainer selectionPreview = new SimpleContainer(1);
     private final ContainerLevelAccess access;
@@ -52,7 +54,7 @@ public class AutomaticAlchemyTableMenu extends AbstractContainerMenu {
         this.blockEntity = level.getBlockEntity(pos) instanceof AutomaticAlchemyTableBlockEntity be ? be : null;
 
         if (blockEntity != null) {
-            this.addSlot(new SlotItemHandler(blockEntity.getInventory(), AutomaticAlchemyTableBlockEntity.SLOT_INPUT, 20, 44) {
+            this.addSlot(new SlotItemHandler(blockEntity.getInventory(), AutomaticAlchemyTableBlockEntity.SLOT_INPUT, 20, 54) {
                 @Override
                 public boolean mayPlace(ItemStack stack) {
                     return false;
@@ -60,7 +62,7 @@ public class AutomaticAlchemyTableMenu extends AbstractContainerMenu {
             });
         } else {
             SimpleContainer emptyInput = new SimpleContainer(1);
-            this.addSlot(new Slot(emptyInput, 0, 20, 44) {
+            this.addSlot(new Slot(emptyInput, 0, 20, 54) {
                 @Override
                 public boolean mayPlace(ItemStack stack) {
                     return false;
@@ -84,6 +86,36 @@ public class AutomaticAlchemyTableMenu extends AbstractContainerMenu {
                 return false;
             }
         });
+
+        if (blockEntity != null) {
+            this.addSlot(new SlotItemHandler(blockEntity.getInventory(), AutomaticAlchemyTableBlockEntity.SLOT_CATALYST, 20, 35) {
+                @Override
+                public boolean mayPlace(ItemStack stack) {
+                    return false;
+                }
+            });
+            this.addSlot(new SlotItemHandler(blockEntity.getInventory(), AutomaticAlchemyTableBlockEntity.SLOT_OUTPUT, 143, 63) {
+                @Override
+                public boolean mayPlace(ItemStack stack) {
+                    return false;
+                }
+            });
+        } else {
+            SimpleContainer emptyCatalyst = new SimpleContainer(1);
+            this.addSlot(new Slot(emptyCatalyst, 0, 20, 35) {
+                @Override
+                public boolean mayPlace(ItemStack stack) { return false; }
+                @Override
+                public boolean mayPickup(Player player) { return false; }
+            });
+            SimpleContainer emptyOutput = new SimpleContainer(1);
+            this.addSlot(new Slot(emptyOutput, 0, 143, 63) {
+                @Override
+                public boolean mayPlace(ItemStack stack) { return false; }
+                @Override
+                public boolean mayPickup(Player player) { return false; }
+            });
+        }
 
         for (int row = 0; row < 3; ++row) {
             for (int col = 0; col < 9; ++col) {
@@ -175,18 +207,18 @@ public class AutomaticAlchemyTableMenu extends AbstractContainerMenu {
         ItemStack stackInSlot = slot.getItem();
         ItemStack original = stackInSlot.copy();
 
-        if (index == SLOT_INPUT) {
+        if (index == SLOT_INPUT || index == SLOT_CATALYST || index == SLOT_OUTPUT) {
             if (!this.moveItemStackTo(stackInSlot, SLOT_PLAYER_START, SLOT_PLAYER_END, false)) {
                 return ItemStack.EMPTY;
             }
-        } else if (index < SLOT_PLAYER_END - 9) {
-            if (!this.moveItemStackTo(stackInSlot, SLOT_PLAYER_END - 9, SLOT_PLAYER_END, false)
-                    && !this.moveItemStackTo(stackInSlot, SLOT_INPUT, SLOT_INPUT + 1, false)) {
+        } else if (index >= SLOT_PLAYER_START && index < SLOT_PLAYER_END - 9) {
+            if (!this.moveItemStackTo(stackInSlot, SLOT_PLAYER_END - 9, SLOT_PLAYER_END, false)) {
                 return ItemStack.EMPTY;
             }
-        } else if (!this.moveItemStackTo(stackInSlot, SLOT_PLAYER_START, SLOT_PLAYER_END - 9, false)
-                && !this.moveItemStackTo(stackInSlot, SLOT_INPUT, SLOT_INPUT + 1, false)) {
-            return ItemStack.EMPTY;
+        } else if (index >= SLOT_PLAYER_END - 9) {
+            if (!this.moveItemStackTo(stackInSlot, SLOT_PLAYER_START, SLOT_PLAYER_END - 9, false)) {
+                return ItemStack.EMPTY;
+            }
         }
 
         if (stackInSlot.isEmpty()) {

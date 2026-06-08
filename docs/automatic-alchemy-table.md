@@ -105,11 +105,27 @@ Enregistré dans `ModBlockEntities.registerCapabilities` sur `Capabilities.ItemH
 
 Handlers par face via `SingleSlotHandler` (un slot, insert/extract contrôlés) :
 
-- **Entrée** : `insert = false`, `extract = false` → les hoppers ne peuvent pas pousser dans le slot d'entrée (évite que la sortie craftée revienne dans le slot d'arrivée). Seul le **tick serveur** remplit l'entrée.
+- **Entrée** : `insert = true` (filtré par `canAcceptInputFromHopper`), `extract = false` → funnels Create en push et hoppers peuvent déposer ; aucun automate ne retire par cette face.
 - **Sortie** : `insert = false`, `extract = true` → un hopper peut aussi **tirer** depuis le buffer de sortie.
 - **Haut** : insert + extract pour le catalyseur (comportement classique).
 
 `getAdjacentItemHandler` interroge la capability sur la face opposée (`fromTableTowardNeighbor.getOpposite()`), avec repli `null` si besoin.
+
+### Compatibilité Create (funnels)
+
+Aucune dépendance Create en production : les funnels utilisent la même API `IItemHandler` que les hoppers.
+
+| Face | Funnel Create | Hopper vanilla |
+|------|---------------|----------------|
+| Gauche (entrée) | Push → `insertItem` filtré **ou** buffer aspiré par la table (8 ticks) | Aspiration active + insert capability |
+| Droite (sortie) | Pull → `extractItem` sur le buffer | Éjection active + extract capability |
+| Haut (catalyseur) | Push / pull selon mode funnel | Aspiration active + insert/extract |
+
+Branchement recommandé : tapis → funnel push (gauche) → table → funnel pull (droite) → tapis sortie.
+
+Vitesse table : **8 ticks** par transfert ou craft (`HopperBlockEntity.MOVE_ITEM_SPEED`), identique à un hopper.
+
+Pour tester en dev : Create est chargé via `localRuntime` dans `build.gradle` (absent du jar publié et de `neoforge.mods.toml`).
 
 ---
 
@@ -167,10 +183,10 @@ Ne dépend pas uniquement de `selectedRecipeId` figé au clic GUI — important 
 
 | Index | Position GUI | Contenu | Interaction joueur |
 |-------|--------------|---------|--------------------|
-| 0 | 20, 44 | `SLOT_INPUT` du BE | Retrait seul (pas de dépôt) |
+| 0 | 20, 54 | `SLOT_INPUT` du BE | Retrait seul (pas de dépôt) |
 | 1 | 143, 45 | Aperçu cible (`selectionPreview`) | Lecture seule |
 | 2 | 20, 35 | `SLOT_CATALYST` du BE | Retrait seul (pas de dépôt) |
-| 3 | 152, 64 | `SLOT_OUTPUT` du BE (1 item max) | Retrait seul (pas de dépôt) |
+| 3 | 143, 63 | `SLOT_OUTPUT` du BE (1 item max) | Retrait seul (pas de dépôt) |
 
 Inventaire joueur à partir du slot 4.
 
@@ -234,6 +250,7 @@ Recette de craft JSON : table manuelle + hopper + redstone (voir `data/tablemod/
 5. **Slot catalyseur** (haut gauche GUI) : hopper dessus → le catalyseur apparaît. Le joueur peut le retirer mais pas le déposer manuellement.
 6. **Slot sortie** (bas droite GUI) : retirer le hopper droit → l'item transmuté reste dans le slot (1 seul). La table ne transmute plus tant que le slot n'est pas vidé. Le joueur peut récupérer l'item manuellement.
 7. Shift-clic depuis l'inventaire joueur ne dépose rien dans les slots machine.
+8. **Create** : tapis + funnels sur les trois faces — entrée push, sortie pull, catalyseur dessus (recette avec catalyseur).
 
 ---
 

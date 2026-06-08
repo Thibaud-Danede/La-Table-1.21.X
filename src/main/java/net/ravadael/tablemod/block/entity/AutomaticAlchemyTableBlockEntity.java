@@ -137,8 +137,8 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
             return new SingleSlotHandler(inventory, SLOT_CATALYST, true, true, this::canInsertCatalyst);
         }
         if (side == inputSide) {
-            // Pas d'insertion hopper : évite que la sortie craftée revienne dans le slot d'entrée
-            return new SingleSlotHandler(inventory, SLOT_INPUT, false, false, this::canAcceptInputFromHopper);
+            // Insert filtré (funnels Create push) ; extract désactivé pour éviter les boucles
+            return new SingleSlotHandler(inventory, SLOT_INPUT, true, false, this::canAcceptInputFromHopper);
         }
         if (side == outputSide) {
             return new SingleSlotHandler(inventory, SLOT_OUTPUT, false, true, stack -> false);

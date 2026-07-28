@@ -22,14 +22,14 @@ import java.util.Locale;
 
 public class AutomaticAlchemyTableScreen extends AbstractContainerScreen<AutomaticAlchemyTableMenu> {
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath("tablemod", "textures/gui/alchemy_table.png");
+            ResourceLocation.fromNamespaceAndPath("tablemod", "textures/gui/automatic_alchemy_table.png");
 
     private static final int COLS = 4;
     private static final int ROWS = 3;
     private static final int MAX_VISIBLE = COLS * ROWS;
-    private static final int SCROLLBAR_X = 119;
+    private static final int SCROLLBAR_X = 80;
     private static final int SCROLLBAR_Y = 27;
-    private static final int GRID_X = 52;
+    private static final int GRID_X = 13;
     private static final int GRID_Y = 27;
     private static final int BTN_W = 16;
     private static final int BTN_H = 18;
@@ -38,12 +38,19 @@ public class AutomaticAlchemyTableScreen extends AbstractContainerScreen<Automat
     private static final int BTN_V_HOVERED = 214;
     private static final int SPACE_X = 16;
     private static final int SPACE_Y = 18;
-    private static final int SEARCH_X = 51;
+    private static final int SEARCH_X = 12;
     private static final int SEARCH_Y = 7;
     private static final int SEARCH_W = 81;
     private static final int SEARCH_H = 16;
     private static final int SEARCH_TEXT_PADDING = 2;
     private static final int SEARCH_TEXT_PADDING_Y = 4;
+    private static final int ARROW_X = 104;
+    private static final int ARROW_W = 24;
+    private static final int ARROW_CENTER_Y = 52;
+    private static final int ARROW_BODY_THICKNESS = 3;
+    private static final int ARROW_HEAD_START_X = 15;
+    private static final int ARROW_HEAD_HALF_HEIGHT = 7;
+    private static final int ARROW_COLOR = 0xFFFFFFFF;
 
     private int scrollOffset = 0;
     private int selectedIndex = -1;
@@ -132,6 +139,7 @@ public class AutomaticAlchemyTableScreen extends AbstractContainerScreen<Automat
     protected void renderBg(GuiGraphics gfx, float partialTicks, int mouseX, int mouseY) {
         gfx.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
         renderSearchBoxBackground(gfx);
+        renderCraftArrowProgress(gfx);
 
         List<DisplayedResult> results = collectResults();
         int totalRows = (int) Math.ceil(results.size() / (double) COLS);
@@ -197,7 +205,7 @@ public class AutomaticAlchemyTableScreen extends AbstractContainerScreen<Automat
         gfx.drawString(font, playerInventoryTitle, 8, 84, 0x404040, false);
 
         if (!getSearchText().isEmpty() && collectResults().isEmpty()) {
-            gfx.drawString(font, Component.translatable("gui.tablemod.search_empty"), 52, 47, 0x5B5146, false);
+            gfx.drawString(font, Component.translatable("gui.tablemod.search_empty"), 13, 47, 0x5B5146, false);
         }
     }
 
@@ -402,6 +410,29 @@ public class AutomaticAlchemyTableScreen extends AbstractContainerScreen<Automat
 
         gfx.fill(x1, y1, x2, y2, 0xFF3D352A);
         gfx.fill(x1 + 1, y1 + 1, x2 - 1, y2 - 1, 0xCC6E5E49);
+    }
+
+    private void renderCraftArrowProgress(GuiGraphics gfx) {
+        int filled = Math.max(0, Math.min(ARROW_W, Math.round(ARROW_W * menu.getCraftProgress())));
+        if (filled <= 0) {
+            return;
+        }
+
+        int x = leftPos + ARROW_X;
+        int centerY = topPos + ARROW_CENTER_Y;
+        int bodyTop = centerY - ARROW_BODY_THICKNESS / 2;
+        int bodyBottom = bodyTop + ARROW_BODY_THICKNESS;
+        for (int dx = 0; dx < filled; dx++) {
+            if (dx < ARROW_HEAD_START_X) {
+                gfx.fill(x + dx, bodyTop, x + dx + 1, bodyBottom, ARROW_COLOR);
+            } else {
+                int headStep = dx - ARROW_HEAD_START_X;
+                int halfHeight = Math.max(0, ARROW_HEAD_HALF_HEIGHT - headStep);
+                int top = centerY - halfHeight;
+                int bottom = centerY + halfHeight + 1;
+                gfx.fill(x + dx, top, x + dx + 1, bottom, ARROW_COLOR);
+            }
+        }
     }
 
     private record DisplayedResult(ResourceLocation recipeId, AlchemyRecipe recipe, ItemStack stack) {

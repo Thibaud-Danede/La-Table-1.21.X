@@ -36,8 +36,10 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
 
     /** Un item par opération de transfert, comme un hopper vanilla. */
     private static final int ITEMS_PER_TRANSFER = 1;
-    /** Délai entre deux transferts ou crafts réussis (8 ticks = hopper). */
-    private static final int TICKS_PER_OPERATION = HopperBlockEntity.MOVE_ITEM_SPEED;
+    /** Délai entre deux transferts réussis (8 ticks = hopper vanilla). */
+    private static final int TICKS_PER_TRANSFER = HopperBlockEntity.MOVE_ITEM_SPEED;
+    /** Temps de craft automatique (20 ticks = 1 seconde). */
+    private static final int TICKS_PER_CRAFT = 10;
 
     private int transferCooldown = 0;
     private int craftCooldown = 0;
@@ -97,6 +99,14 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
         return selectedOutput.copy();
     }
 
+    public int getCraftCooldown() {
+        return craftCooldown;
+    }
+
+    public int getTicksPerOperation() {
+        return TICKS_PER_CRAFT;
+    }
+
     public void rememberSelection(@Nullable ResourceLocation recipeId, ItemStack output) {
         if (recipeId == null || output.isEmpty()) {
             selectedRecipeId = null;
@@ -147,7 +157,8 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, AutomaticAlchemyTableBlockEntity be) {
-        boolean active = be.hasTargetSelection() && !be.inventory.getStackInSlot(SLOT_INPUT).isEmpty();
+        boolean active = be.hasTargetSelection()
+                && (!be.inventory.getStackInSlot(SLOT_INPUT).isEmpty() || be.craftCooldown > 0);
         boolean lit = be.hasUsers() || active;
 
         if (state.getValue(AutomaticAlchemyTableBlock.LIT) != lit) {
@@ -168,16 +179,22 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
             if (be.transferCooldown > 0) {
                 be.transferCooldown--;
             }
-            if (be.craftCooldown > 0) {
-                be.craftCooldown--;
-            }
 
             if (be.transferCooldown == 0 && be.tryTransferWithAdjacentBlocks(level)) {
-                be.transferCooldown = TICKS_PER_OPERATION;
+                be.transferCooldown = TICKS_PER_TRANSFER;
             }
 
-            if (be.craftCooldown == 0 && be.tryCraftOne(level)) {
-                be.craftCooldown = TICKS_PER_OPERATION;
+            if (be.craftCooldown > 0) {
+                if (be.canCraftOne(level)) {
+                    be.craftCooldown--;
+                    if (be.craftCooldown == 0) {
+                        be.tryCraftOne(level);
+                    }
+                } else {
+                    be.craftCooldown = 0;
+                }
+            } else if (be.canCraftOne(level)) {
+                be.craftCooldown = TICKS_PER_CRAFT;
             }
         }
     }
@@ -315,7 +332,7 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
     }
 
     private boolean tryCraftOne(Level level) {
-        if (!hasTargetSelection()) {
+        if (!canCraftOne(level)) {
             return false;
         }
 
@@ -327,15 +344,6 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
         }
 
         AlchemyRecipe recipe = holder.value();
-        AlchemyRecipeInput recipeInput = new AlchemyRecipeInput(inputStack, catalystStack);
-
-        if (!recipe.matches(recipeInput, level)) {
-            return false;
-        }
-
-        if (!inventory.getStackInSlot(SLOT_OUTPUT).isEmpty()) {
-            return false;
-        }
 
         ItemStack result = selectedOutput.copy();
         if (result.getCount() < 1) {
@@ -358,6 +366,36 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
 
         setChanged();
         level.playSound(null, worldPosition, SoundEvents.BREWING_STAND_BREW, SoundSource.BLOCKS, 0.3F, 1.0F);
+        return true;
+    }
+
+    private boolean canCraftOne(Level level) {
+        if (!hasTargetSelection()) {
+            return false;
+        }
+
+        ItemStack inputStack = inventory.getStackInSlot(SLOT_INPUT);
+        ItemStack catalystStack = inventory.getStackInSlot(SLOT_CATALYST);
+        RecipeHolder<AlchemyRecipe> holder = findCraftHolder(level, inputStack, catalystStack, selectedOutput);
+        if (holder == null) {
+            return false;
+        }
+
+        AlchemyRecipe recipe = holder.value();
+        AlchemyRecipeInput recipeInput = new AlchemyRecipeInput(inputStack, catalystStack);
+
+        if (!recipe.matches(recipeInput, level)) {
+            return false;
+        }
+
+        if (!inventory.getStackInSlot(SLOT_OUTPUT).isEmpty()) {
+            return false;
+        }
+
+        if (!holder.id().equals(selectedRecipeId)) {
+            rememberSelection(holder.id(), selectedOutput);
+        }
+
         return true;
     }
 

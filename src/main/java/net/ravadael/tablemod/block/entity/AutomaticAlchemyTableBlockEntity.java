@@ -1,5 +1,9 @@
 package net.ravadael.tablemod.block.entity;
 
+import com.simibubi.create.content.kinetics.belt.BeltBlockEntity;
+import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehaviour;
+import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
+import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -14,7 +18,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -28,8 +31,9 @@ import net.ravadael.tablemod.recipe.AlchemyRecipeInput;
 import net.ravadael.tablemod.recipe.ModRecipes;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
-public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements MenuProvider {
+public class AutomaticAlchemyTableBlockEntity extends SmartBlockEntity implements MenuProvider {
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_CATALYST = 1;
     public static final int SLOT_OUTPUT = 2;
@@ -57,7 +61,7 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
 
         @Override
         public int getSlotLimit(int slot) {
-            return slot == SLOT_OUTPUT ? 1 : super.getSlotLimit(slot);
+            return slot == SLOT_OUTPUT || slot == SLOT_INPUT ? 1 : super.getSlotLimit(slot);
         }
     };
 
@@ -69,6 +73,19 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
 
     public AutomaticAlchemyTableBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.AUTOMATIC_ALCHEMY_TABLE_BE.get(), pos, state);
+    }
+
+    @Override
+    public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
+        behaviours.add(new DirectBeltInputBehaviour(this)
+                // Create passes the direction of travel, not the accessed inventory face.
+                .onlyInsertWhen(direction -> direction.getOpposite() == getInputSide())
+                .setInsertionHandler((transported, direction, simulate) -> {
+                    if (direction.getOpposite() != getInputSide()) {
+                        return transported.stack;
+                    }
+                    return inventory.insertItem(SLOT_INPUT, transported.stack.copy(), simulate);
+                }));
     }
 
     public void addUser(Player player) {
@@ -157,6 +174,10 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, AutomaticAlchemyTableBlockEntity be) {
+        be.tick();
+        if (level.isClientSide) {
+            return;
+        }
         boolean active = be.hasTargetSelection()
                 && (!be.inventory.getStackInSlot(SLOT_INPUT).isEmpty() || be.craftCooldown > 0);
         boolean lit = be.hasUsers() || active;
@@ -246,6 +267,10 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
 
     private boolean tryPullFromAdjacent(Level level, Direction fromSide, int inventorySlot) {
         BlockPos sourcePos = worldPosition.relative(fromSide);
+        // Belts deliver at their endpoint through DirectBeltInputBehaviour.
+        if (level.getBlockEntity(sourcePos) instanceof BeltBlockEntity) {
+            return false;
+        }
         IItemHandler source = getAdjacentItemHandler(sourcePos, fromSide);
         if (source == null) {
             return false;
@@ -264,7 +289,12 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
                 continue;
             }
 
-            ItemStack extracted = source.extractItem(i, amount, false);
+            ItemStack simulatedRemainder = inventory.insertItem(inventorySlot, probe, true);
+            int accepted = probe.getCount() - simulatedRemainder.getCount();
+            if (accepted <= 0) {
+                continue;
+            }
+            ItemStack extracted = source.extractItem(i, accepted, false);
             ItemStack remainder = inventory.insertItem(inventorySlot, extracted, false);
             if (!remainder.isEmpty()) {
                 source.insertItem(i, remainder, false);
@@ -306,11 +336,19 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
     }
 
     /**
-     * Entrée hopper : remplit le slot si l'item appartient à une famille alchimie (sans tenir compte de la cible).
-     * Le craft, lui, exige une cible compatible dans {@link #tryCraftOne}.
+     * Entrée automatisée : accepte seulement les items capables de produire la cible choisie.
+     * DirectBeltInputBehaviour laisse l'item refuse sur le tapis.
      */
     private boolean canAcceptInputFromHopper(ItemStack stack) {
         if (level == null || stack.isEmpty()) {
+            return false;
+        }
+
+        if (!hasTargetSelection()) {
+            return false;
+        }
+
+        if (!inventory.getStackInSlot(SLOT_OUTPUT).isEmpty()) {
             return false;
         }
 
@@ -319,16 +357,7 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
             return false;
         }
 
-        return matchesAnyAlchemyInput(stack);
-    }
-
-    private boolean matchesAnyAlchemyInput(ItemStack stack) {
-        for (RecipeHolder<AlchemyRecipe> holder : level.getRecipeManager().getAllRecipesFor(ModRecipes.ALCHEMY_RECIPE_TYPE.get())) {
-            if (holder.value().matchesInputOnly(new AlchemyRecipeInput(stack, ItemStack.EMPTY))) {
-                return true;
-            }
-        }
-        return false;
+        return findCraftHolder(level, stack, inventory.getStackInSlot(SLOT_CATALYST), selectedOutput) != null;
     }
 
     private boolean tryCraftOne(Level level) {
@@ -446,36 +475,29 @@ public class AutomaticAlchemyTableBlockEntity extends BlockEntity implements Men
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        inventory.deserializeNBT(registries, tag.getCompound("Items"));
+    protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+        super.read(tag, registries, clientPacket);
         loadSelection(tag, registries);
+        if (clientPacket) {
+            return;
+        }
+        inventory.deserializeNBT(registries, tag.getCompound("Items"));
         playersUsing = tag.getInt("Users");
         transferCooldown = tag.getInt("TransferCooldown");
         craftCooldown = tag.getInt("CraftCooldown");
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.put("Items", inventory.serializeNBT(registries));
+    protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+        super.write(tag, registries, clientPacket);
         saveSelection(tag, registries);
+        if (clientPacket) {
+            return;
+        }
+        tag.put("Items", inventory.serializeNBT(registries));
         tag.putInt("Users", playersUsing);
         tag.putInt("TransferCooldown", transferCooldown);
         tag.putInt("CraftCooldown", craftCooldown);
-    }
-
-    @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
-        saveSelection(tag, registries);
-        return tag;
-    }
-
-    @Override
-    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
-        super.handleUpdateTag(tag, registries);
-        loadSelection(tag, registries);
     }
 
     private void loadSelection(CompoundTag tag, HolderLookup.Provider registries) {

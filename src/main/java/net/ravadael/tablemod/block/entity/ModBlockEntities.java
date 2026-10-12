@@ -2,12 +2,13 @@ package net.ravadael.tablemod.block.entity;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.ravadael.tablemod.TableMod;
 import net.ravadael.tablemod.block.ModBlocks;
+import net.ravadael.tablemod.compat.CreateIntegration;
 
 public class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
@@ -21,17 +22,12 @@ public class ModBlockEntities {
                     ).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<AutomaticAlchemyTableBlockEntity>> AUTOMATIC_ALCHEMY_TABLE_BE =
-            BLOCK_ENTITIES.register("automatic_alchemy_table",
-                    () -> BlockEntityType.Builder.of(
-                            AutomaticAlchemyTableBlockEntity::new,
-                            ModBlocks.AUTOMATIC_ALCHEMY_TABLE.get()
-                    ).build(null));
+            ModList.get().isLoaded("create")
+                    ? BLOCK_ENTITIES.register("automatic_alchemy_table", CreateIntegration::createBlockEntityType) : null;
 
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        event.registerBlockEntity(
-                Capabilities.ItemHandler.BLOCK,
-                AUTOMATIC_ALCHEMY_TABLE_BE.get(),
-                (be, side) -> be.getItemHandler(side)
-        );
+        if (ModList.get().isLoaded("create")) {
+            CreateIntegration.registerCapabilities(event);
+        }
     }
 }

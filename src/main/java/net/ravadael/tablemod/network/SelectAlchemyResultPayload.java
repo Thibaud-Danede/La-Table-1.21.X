@@ -8,7 +8,8 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.ravadael.tablemod.TableMod;
 import net.ravadael.tablemod.menu.AlchemyTableMenu;
-import net.ravadael.tablemod.menu.AutomaticAlchemyTableMenu;
+import net.neoforged.fml.ModList;
+import net.ravadael.tablemod.compat.CreateIntegration;
 
 public record SelectAlchemyResultPayload(ResourceLocation recipeId, ItemStack selectedOutput) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<SelectAlchemyResultPayload> TYPE =
@@ -35,8 +36,8 @@ public record SelectAlchemyResultPayload(ResourceLocation recipeId, ItemStack se
             }
             if (context.player().containerMenu instanceof AlchemyTableMenu menu) {
                 menu.setSelectedOutput(payload.recipeId(), payload.selectedOutput());
-            } else if (context.player().containerMenu instanceof AutomaticAlchemyTableMenu autoMenu) {
-                autoMenu.setSelectedOutput(payload.recipeId(), payload.selectedOutput());
+            } else if (ModList.get().isLoaded("create")) {
+                CreateIntegration.selectOutput(context.player().containerMenu, payload.recipeId(), payload.selectedOutput());
             }
         });
     }

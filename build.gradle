@@ -12,6 +12,10 @@ sourceSets.main.resources {
     srcDir('src/generated/resources')
 }
 
+if (providers.gradleProperty('tablemodGameTests').isPresent()) {
+    sourceSets.main.java.srcDir('src/gametest/java')
+}
+
 configurations {
     localRuntime
     runtimeClasspath.extendsFrom localRuntime
@@ -51,6 +55,7 @@ runs {
 
     gameTestServer {
         systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+        systemProperty 'tablemod.testStructures', file('src/gametest/structures').absolutePath
     }
 
     data {
@@ -70,11 +75,15 @@ dependencies {
     compileOnly "dev.emi:emi-neoforge:${emi_version}:api"
     runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
 
-    // Create — dev/test uniquement (localRuntime, absent du jar publié)
-    localRuntime("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
-    localRuntime "net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}"
-    localRuntime "dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}"
-    localRuntime "com.tterrag.registrate:Registrate:${registrate_version}"
+    // Create is optional for the mod, required by the automatic table.
+    compileOnly("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
+    compileOnly "net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}"
+    if (!providers.gradleProperty('tablemodWithoutCreate').isPresent()) {
+        localRuntime("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
+        localRuntime "net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}"
+        localRuntime "dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}"
+        localRuntime "com.tterrag.registrate:Registrate:${registrate_version}"
+    }
 
     implementation('net.sf.jopt-simple:jopt-simple:5.0.4') { version { strictly '5.0.4' } }
 }
@@ -100,6 +109,7 @@ tasks.withType(ProcessResources).configureEach {
 }
 
 tasks.named('jar', Jar).configure {
+    exclude('net/ravadael/tablemod/gametest/**')
     manifest {
         attributes([
                 'Specification-Title'    : mod_id,

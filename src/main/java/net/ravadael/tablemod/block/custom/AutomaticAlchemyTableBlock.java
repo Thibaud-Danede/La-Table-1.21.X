@@ -62,7 +62,7 @@ public class AutomaticAlchemyTableBlock extends HorizontalDirectionalBlock imple
 
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return !level.isClientSide && type == ModBlockEntities.AUTOMATIC_ALCHEMY_TABLE_BE.get()
+        return type == ModBlockEntities.AUTOMATIC_ALCHEMY_TABLE_BE.get()
                 ? (lvl, p, st, be) -> AutomaticAlchemyTableBlockEntity.serverTick(lvl, p, st, (AutomaticAlchemyTableBlockEntity) be)
                 : null;
     }

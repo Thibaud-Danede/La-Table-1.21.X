@@ -12,7 +12,8 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.ravadael.tablemod.TableMod;
 import net.ravadael.tablemod.block.custom.AlchemyTableBlock;
-import net.ravadael.tablemod.block.custom.AutomaticAlchemyTableBlock;
+import net.neoforged.fml.ModList;
+import net.ravadael.tablemod.compat.CreateIntegration;
 import net.ravadael.tablemod.item.ModItems;
 
 import java.util.function.Supplier;
@@ -28,12 +29,8 @@ public class ModBlocks {
                             .noOcclusion()
             ));
 
-    public static final DeferredHolder<Block, Block> AUTOMATIC_ALCHEMY_TABLE = registerBlock("automatic_alchemy_table",
-            () -> new AutomaticAlchemyTableBlock(
-                    BlockBehaviour.Properties.ofFullCopy(Blocks.CRIMSON_PLANKS)
-                            .sound(SoundType.WOOD)
-                            .noOcclusion()
-            ));
+    public static final DeferredHolder<Block, Block> AUTOMATIC_ALCHEMY_TABLE = ModList.get().isLoaded("create")
+            ? registerBlock("automatic_alchemy_table", CreateIntegration::createAutomaticTable) : null;
 
     private static <T extends Block> DeferredHolder<Block, T> registerBlock(String name, Supplier<T> block) {
         DeferredHolder<Block, T> toReturn = BLOCKS.register(name, block);

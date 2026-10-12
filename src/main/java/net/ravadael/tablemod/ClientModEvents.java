@@ -18,14 +18,18 @@ public class ClientModEvents {
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenuTypes.ALCHEMY_TABLE_MENU.get(), AlchemyTableScreen::new);
-        event.register(ModMenuTypes.AUTOMATIC_ALCHEMY_TABLE_MENU.get(), AutomaticAlchemyTableScreen::new);
+        if (ModMenuTypes.AUTOMATIC_ALCHEMY_TABLE_MENU != null) {
+            event.register(ModMenuTypes.AUTOMATIC_ALCHEMY_TABLE_MENU.get(), AutomaticAlchemyTableScreen::new);
+        }
     }
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.ALCHEMY_TABLE.get(), RenderType.cutout());
-            ItemBlockRenderTypes.setRenderLayer(ModBlocks.AUTOMATIC_ALCHEMY_TABLE.get(), RenderType.cutout());
+            if (ModBlocks.AUTOMATIC_ALCHEMY_TABLE != null) {
+                ItemBlockRenderTypes.setRenderLayer(ModBlocks.AUTOMATIC_ALCHEMY_TABLE.get(), RenderType.cutout());
+            }
         });
     }
 }
